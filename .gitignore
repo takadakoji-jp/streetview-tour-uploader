@@ -1,0 +1,25 @@
+# Credentials (never commit these)
+client_secrets.json
+token.json
+
+# Working data
+*.JPG
+*.jpg
+*.jpeg
+*_blurred/
+work/
+upload_result.json
+gps_backup.json
+tour.csv
+tour-meta.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# OS
+.DS_Store
+Thumbs.db

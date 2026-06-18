@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>360 Walkthrough Prototype</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5.11.5/index.css">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  #viewer { width: 100vw; height: 100vh; background: #111; }
+
+  /* Initial drop screen */
+  #drop {
+    position: fixed; inset: 0; z-index: 10;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 18px; text-align: center; color: #e5e7eb;
+    background: radial-gradient(circle at 50% 30%, #1f2937, #0b0f17);
+    transition: opacity .3s; padding: 24px;
+  }
+  #drop.hide { opacity: 0; pointer-events: none; }
+  #drop h1 { font-size: 22px; font-weight: 700; }
+  #drop p { font-size: 14px; color: #9ca3af; line-height: 1.7; }
+  .zone {
+    border: 2px dashed #4b5563; border-radius: 16px;
+    padding: 48px 56px; transition: .2s;
+    background: rgba(255,255,255,.02);
+  }
+  .zone.over { border-color: #22c55e; background: rgba(34,197,94,.08); }
+  .pick {
+    display: inline-block; margin-top: 8px; cursor: pointer;
+    background: #22c55e; color: #04140a; font-weight: 700;
+    padding: 10px 20px; border-radius: 10px; font-size: 14px;
+  }
+  #hint {
+    position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%);
+    z-index: 5; color: #cbd5e1; background: rgba(0,0,0,.45);
+    padding: 7px 14px; border-radius: 999px; font-size: 12px;
+    backdrop-filter: blur(4px);
+  }
+</style>
+</head>
+<body>
+
+<div id="viewer"></div>
+
+<div id="drop">
+  <h1>🏠 360 Walkthrough Prototype</h1>
+  <p>Drag &amp; drop an <b>equirectangular 360 photo (.jpg)</b> from your<br>THETA / Insta360 onto the box below.</p>
+  <div class="zone" id="zone">
+    <p>Drop a 360 photo here</p>
+    <label class="pick">Choose a file
+      <input id="file" type="file" accept="image/*" hidden>
+    </label>
+  </div>
+  <p style="font-size:12px">Only an internet connection is needed (the viewer loads from a CDN). Your photo is never sent to any server — everything runs in the browser.</p>
+</div>
+
+<div id="hint" style="display:none">Drag to look around / scroll to zoom / drop another photo to replace</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+    "@photo-sphere-viewer/core": "https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5.11.5/index.module.js"
+  }
+}
+</script>
+<script type="module">
+import { Viewer } from '@photo-sphere-viewer/core';
+
+let viewer = null;
+const dropEl = document.getElementById('drop');
+const zone   = document.getElementById('zone');
+const hint   = document.getElementById('hint');
+
+function show(url) {
+  if (!viewer) {
+    viewer = new Viewer({
+      container: document.getElementById('viewer'),
+      panorama: url,
+      navbar: ['zoom', 'move', 'fullscreen'],
+      defaultZoomLvl: 0,
+    });
+    dropEl.classList.add('hide');
+    hint.style.display = 'block';
+  } else {
+    viewer.setPanorama(url);
+  }
+}
+
+function handleFile(file) {
+  if (!file || !file.type.startsWith('image/')) {
+    alert('Please drop an image file (.jpg etc.)'); return;
+  }
+  show(URL.createObjectURL(file));
+}
+
+// Drag & drop
+['dragenter','dragover'].forEach(ev =>
+  zone.addEventListener(ev, e => { e.preventDefault(); zone.classList.add('over'); }));
+['dragleave','drop'].forEach(ev =>
+  zone.addEventListener(ev, e => { e.preventDefault(); zone.classList.remove('over'); }));
+zone.addEventListener('drop', e => handleFile(e.dataTransfer.files[0]));
+
+// Drop anywhere on screen to replace (after the first photo)
+window.addEventListener('dragover', e => e.preventDefault());
+window.addEventListener('drop', e => { e.preventDefault(); if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+
+// File picker
+document.getElementById('file').addEventListener('change', e => handleFile(e.target.files[0]));
+</script>
+</body>
+</html>
