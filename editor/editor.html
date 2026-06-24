@@ -5,82 +5,79 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Walkthrough Tour Editor</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5.11.5/index.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+    "@photo-sphere-viewer/core": "https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5.11.5/index.module.js",
+    "@photo-sphere-viewer/virtual-tour-plugin": "https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/virtual-tour-plugin@5.11.5/index.module.js"
+  }
+}
+</script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: system-ui,-apple-system,sans-serif; background:#111827; color:#e5e7eb; height:100vh; display:flex; flex-direction:column; overflow:hidden; }
-
-/* toolbar */
 #tb { display:flex; align-items:center; gap:10px; padding:7px 12px; background:#1f2937; border-bottom:1px solid #374151; flex-shrink:0; }
 .tg { display:flex; gap:4px; }
 .sep { width:1px; height:26px; background:#374151; }
-.btn { padding:5px 10px; border:1px solid #374151; border-radius:5px; background:#111827; color:#e5e7eb; cursor:pointer; font-size:12px; white-space:nowrap; }
+.btn { padding:6px 10px; border:1px solid #374151; border-radius:5px; background:#111827; color:#e5e7eb; cursor:pointer; font-size:12px; white-space:nowrap; }
 .btn:hover { background:#374151; }
 .btn.on { background:#3b82f6; border-color:#3b82f6; }
 .btn.g { background:#16a34a; border-color:#16a34a; color:#fff; font-weight:700; }
 .btn.g:hover { background:#15803d; }
-#st { font-size:11px; color:#6b7280; }
-
-/* layout */
+#st, .savehint { font-size:11px; color:#9ca3af; }
+.savehint { max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 #main { display:flex; flex:1; overflow:hidden; }
-
-/* sidebar */
-#sb { width:220px; flex-shrink:0; background:#1f2937; border-right:1px solid #374151; overflow-y:auto; padding:12px; }
+#sb { width:360px; flex-shrink:0; background:#1f2937; border-right:1px solid #374151; overflow-y:auto; padding:12px; }
 .pl { font-size:11px; color:#9ca3af; margin-bottom:4px; }
 .pg { margin-bottom:14px; }
-.pi { width:100%; padding:5px 7px; border-radius:5px; border:1px solid #374151; background:#111827; color:#e5e7eb; font-size:12px; }
-.pb { width:100%; aspect-ratio:2/1; background:#111827; border-radius:5px; overflow:hidden; display:flex; align-items:center; justify-content:center; border:1px solid #374151; font-size:11px; color:#4b5563; margin-bottom:5px; }
+.pi { width:100%; padding:6px 8px; border-radius:5px; border:1px solid #374151; background:#111827; color:#e5e7eb; font-size:12px; }
+.pb { width:100%; aspect-ratio:2/1; background:#111827; border-radius:5px; overflow:hidden; display:flex; align-items:center; justify-content:center; border:1px solid #374151; font-size:11px; color:#4b5563; margin-bottom:6px; }
 .pb img { width:100%; height:100%; object-fit:cover; }
+.pvw { width:100%; aspect-ratio:2/1; border:1px solid #374151; border-radius:5px; overflow:hidden; background:#111827; margin-top:6px; }
+.pvw > div { width:100%; height:100%; }
+.cmp { width:100%; aspect-ratio:2/1; border:1px solid #374151; border-radius:5px; overflow:hidden; background:#111827; margin-top:8px; position:relative; }
+.cmp-layer { position:absolute; inset:0; }
+.cmp-layer.fade { opacity:.45; pointer-events:none; }
+.cmp-layer > div { width:100%; height:100%; }
 .fl { display:inline-block; padding:5px 9px; background:#374151; border-radius:5px; cursor:pointer; font-size:11px; }
 .fl:hover { background:#4b5563; }
-.fn { font-size:10px; color:#6b7280; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:3px; }
-.cb2 { display:flex; align-items:center; gap:5px; font-size:11px; cursor:pointer; }
-.ci { display:flex; justify-content:space-between; align-items:center; padding:3px 0; border-bottom:1px solid #111827; }
+.fn { font-size:10px; color:#6b7280; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:4px; }
+.cb2 { display:flex; align-items:center; gap:6px; font-size:11px; cursor:pointer; }
+.ci { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:4px 0; border-bottom:1px solid #111827; }
+.cil { cursor:pointer; color:#dbeafe; }
+.cil:hover { text-decoration:underline; }
 .cx { cursor:pointer; color:#ef4444; font-size:13px; padding:0 2px; }
-.dbtn { width:100%; padding:6px; border:1px solid #ef4444; border-radius:5px; background:transparent; color:#ef4444; cursor:pointer; font-size:11px; margin-top:8px; }
+.walklist { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+.walkchip { border:1px solid #374151; background:#111827; color:#e5e7eb; border-radius:999px; padding:6px 10px; font-size:11px; cursor:pointer; }
+.walkchip:hover { background:#374151; }
+.dbtn { width:100%; padding:7px; border:1px solid #ef4444; border-radius:5px; background:transparent; color:#ef4444; cursor:pointer; font-size:11px; margin-top:8px; }
 .dbtn:hover { background:#ef4444; color:#fff; }
-.hint { background:#111827; border-radius:5px; padding:10px; font-size:11px; color:#6b7280; line-height:1.8; }
+.hint { background:#111827; border-radius:5px; padding:10px; font-size:11px; color:#9ca3af; line-height:1.8; }
 .hint ol { padding-left:14px; }
 .gok { font-size:10px; color:#22c55e; }
 .gno { font-size:10px; color:#f59e0b; }
-
-/* map */
+.mini { font-size:10px; color:#9ca3af; line-height:1.5; margin-top:6px; }
+.r2 { display:grid; grid-template-columns:1fr 84px; gap:6px; }
+.r2wide { display:grid; grid-template-columns:1fr 92px; gap:6px; }
+.rowbtn { display:flex; gap:6px; margin-top:6px; }
+.rowbtn .btn { flex:1; padding:6px 8px; font-size:11px; }
+.slider { width:100%; margin-top:8px; }
 #mw { flex:1; position:relative; }
 #map { width:100%; height:100%; }
-
-/* drop overlay */
-#do {
-  position:absolute; inset:0; z-index:1000; pointer-events:none;
-  display:flex; align-items:center; justify-content:center;
-  background:rgba(59,130,246,.12); border:3px dashed #3b82f6;
-  font-size:16px; color:#93c5fd; opacity:0; transition:opacity .2s;
-}
+#do { position:absolute; inset:0; z-index:1000; pointer-events:none; display:flex; align-items:center; justify-content:center; background:rgba(59,130,246,.12); border:3px dashed #3b82f6; font-size:16px; color:#93c5fd; opacity:0; transition:opacity .2s; }
 #do.show { opacity:1; pointer-events:all; }
-
-/* leaflet custom node marker */
-.nd {
-  width:34px; height:34px; border-radius:50%;
-  background:#ef4444; border:2.5px solid #fff;
-  display:flex; align-items:center; justify-content:center;
-  font-size:11px; font-weight:700; color:#fff;
-  box-shadow:0 2px 8px rgba(0,0,0,.5); cursor:pointer; position:relative;
-  transition:transform .1s;
-}
+.nd { width:34px; height:34px; border-radius:50%; background:#ef4444; border:2.5px solid #fff; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#fff; box-shadow:0 2px 8px rgba(0,0,0,.5); cursor:pointer; position:relative; transition:transform .1s; }
 .nd:hover { transform:scale(1.12); }
 .nd.sel { background:#3b82f6; border-color:#bfdbfe; box-shadow:0 0 0 4px rgba(59,130,246,.4); }
 .nd.start { background:#f59e0b; border-color:#fde68a; }
 .nd.csrc { animation:pulse 1s infinite; }
-@keyframes pulse {
-  0%,100% { box-shadow:0 0 0 0 rgba(239,68,68,.7); }
-  50%      { box-shadow:0 0 0 10px rgba(239,68,68,0); }
-}
-.nd.hp::after { content:'📷'; position:absolute; bottom:-5px; right:-5px; font-size:10px; }
+@keyframes pulse { 0%,100% { box-shadow:0 0 0 0 rgba(239,68,68,.7); } 50% { box-shadow:0 0 0 10px rgba(239,68,68,0); } }
+.nd.hp::after { content:'360'; position:absolute; bottom:-8px; right:-9px; font-size:8px; background:#111827; border:1px solid #374151; border-radius:999px; padding:1px 4px; }
 .nl { position:absolute; top:100%; left:50%; transform:translateX(-50%); margin-top:3px; background:rgba(0,0,0,.75); color:#fff; font-size:9px; padding:1px 5px; border-radius:3px; white-space:nowrap; pointer-events:none; }
-
-/* connection delete button */
 .conn-x { width:18px; height:18px; border-radius:50%; background:#ef4444; border:1.5px solid #fff; color:#fff; display:flex; align-items:center; justify-content:center; font-size:11px; cursor:pointer; box-shadow:0 1px 4px rgba(0,0,0,.4); }
 .conn-x:hover { background:#dc2626; }
-
-/* toast */
 .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#1f2937; color:#fde68a; padding:8px 16px; border-radius:8px; font-size:12px; z-index:9999; box-shadow:0 4px 12px rgba(0,0,0,.5); pointer-events:none; }
 </style>
 </head>
@@ -88,87 +85,174 @@ body { font-family: system-ui,-apple-system,sans-serif; background:#111827; colo
 
 <div id="tb">
   <div class="tg">
-    <button class="btn mode-btn on" data-m="s">↖ Select/Move</button>
-    <button class="btn mode-btn" data-m="a">➕ Add node</button>
-    <button class="btn mode-btn" data-m="c">🔗 Connect</button>
+    <button class="btn mode-btn on" data-m="s">Select</button>
+    <button class="btn mode-btn" data-m="a">Add Node</button>
+    <button class="btn mode-btn" data-m="c">Connect</button>
   </div>
   <div class="sep"></div>
-  <span id="st">Nodes 0 | Connections 0</span>
+  <span id="st">Nodes 0 | Links 0</span>
   <div style="flex:1"></div>
+  <span class="savehint" id="savehint">Save target: Downloads</span>
   <div class="tg">
-    <button class="btn" id="bsave">💾 Save</button>
-    <button class="btn g" id="bexp">📦 Export tour</button>
+    <button class="btn" id="bdir">Save Target</button>
+    <button class="btn" id="best">Estimate Heading</button>
+    <button class="btn" id="bsave">Save</button>
+    <button class="btn" id="bcsv">CSV</button>
+    <button class="btn g" id="bexp">Export</button>
   </div>
 </div>
 
 <div id="main">
   <div id="sb">
     <div id="no-sel">
-      <p style="font-size:12px;color:#6b7280;margin-bottom:10px">Drop 360 photos onto the map<br>→ auto-placed by GPS</p>
+      <p style="font-size:12px;color:#9ca3af;margin-bottom:10px">Drop 360 JPG files onto the map to plan links and orientation.</p>
       <div class="hint">
-        <strong>How to use</strong>
+        <strong>How to Use</strong>
         <ol>
-          <li>Drop 360 photos onto the map</li>
-          <li>They are auto-placed using GPS</li>
-          <li>In "Connect" mode, click two nodes to link a route</li>
-          <li>Click "Export tour" to generate the HTML</li>
+          <li>Drop photos onto the map</li>
+          <li>If GPS exists, photos are placed automatically; otherwise they are placed at the drop point</li>
+          <li>In Connect mode, click two points to create a link</li>
+          <li>Adjust heading and the compare view on the selected node</li>
+          <li>Walk to linked nodes inside the same file while checking the result</li>
         </ol>
-        <br>
-        <span style="color:#4b5563">Photos without GPS: drag them to position manually</span>
       </div>
     </div>
+
     <div id="n-pr" style="display:none">
-      <p class="pl" style="margin-bottom:8px">📍 Node settings</p>
+      <p class="pl" style="margin-bottom:8px">Node Settings</p>
+
       <div class="pg">
         <p class="pl">Name</p>
-        <input class="pi" id="ni-n" type="text" placeholder="e.g. Garden entrance">
+        <input class="pi" id="ni-n" type="text" placeholder="Node name">
       </div>
+
       <div class="pg">
-        <p class="pl">360 photo <span id="gps-b"></span></p>
+        <p class="pl">360 Photo <span id="gps-b"></span></p>
         <div class="pb" id="ph-b"><span>No photo</span></div>
-        <label class="fl">📷 Change photo<input type="file" id="ni-p" accept="image/*" hidden></label>
+        <label class="fl">Replace Photo<input type="file" id="ni-p" accept="image/*" hidden></label>
         <div class="fn" id="ph-n"></div>
+        <div class="pvw" id="pano-wrap" style="display:none"><div id="pano-view"></div></div>
+        <div class="mini" id="pano-help">Choose a photo to check north alignment here.</div>
       </div>
+
       <div class="pg">
-        <label class="cb2"><input type="checkbox" id="ni-s"> ⭐ Start point</label>
+        <p class="pl">Heading / North</p>
+        <input class="pi" id="ni-h" type="number" min="0" max="359.9" step="0.1" placeholder="0 - 359.9">
+        <div class="rowbtn">
+          <button class="btn" id="bh-set">Set This Direction as North</button>
+          <button class="btn" id="bh-reset">Reset to EXIF</button>
+        </div>
+        <div class="mini" id="heading-meta">Heading not set</div>
+        <div class="mini">Only horizontal alignment matters here, not up/down.</div>
       </div>
+
       <div class="pg">
-        <p class="pl">Connections</p>
+        <label class="cb2"><input type="checkbox" id="ni-s"> Use as Start Node</label>
+      </div>
+
+      <div class="pg">
+        <p class="pl">Walkthrough</p>
+        <div class="rowbtn">
+          <button class="btn" id="walk-back">Back One Step</button>
+          <button class="btn" id="walk-start">Back to Start</button>
+        </div>
+        <div class="mini" id="walk-help">Move to linked nodes directly inside the editor.</div>
+        <div class="walklist" id="walk-list"></div>
+      </div>
+
+      <div class="pg">
+        <p class="pl">Linked Nodes</p>
         <div id="cl-l" style="font-size:11px"></div>
       </div>
-      <button class="dbtn" id="bn-d">🗑 Delete node</button>
+
+      <div class="pg">
+        <p class="pl">Compare / Walkthrough Check</p>
+        <div class="r2wide">
+          <select class="pi" id="cmp-target"></select>
+          <button class="btn" id="cmp-step">Move</button>
+        </div>
+        <div class="rowbtn">
+          <button class="btn" id="cmp-center">Match Same View</button>
+          <button class="btn" id="cmp-swap">Swap Front/Back</button>
+        </div>
+        <input class="slider" id="cmp-opacity" type="range" min="0" max="100" value="45">
+        <div class="mini" id="cmp-help">Pick a linked node to overlay the current and next viewpoints for alignment.</div>
+        <div class="cmp" id="cmp-wrap" style="display:none">
+          <div class="cmp-layer"><div id="cmp-base"></div></div>
+          <div class="cmp-layer fade" id="cmp-overlay-layer"><div id="cmp-overlay"></div></div>
+        </div>
+      </div>
+
+      <button class="dbtn" id="bn-d">Delete This Node</button>
     </div>
   </div>
 
   <div id="mw">
     <div id="map"></div>
-    <div id="do">📷 Drop 360 photos here (GPS auto-read)</div>
+    <div id="do">Drop 360 JPG files here</div>
   </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 <script type="module">
 import exifr from 'https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/full.esm.js';
+import { Viewer } from '@photo-sphere-viewer/core';
 
-// ── STATE ──
 const S = {
   mode: 's',
-  nodes: [],  // { id, name, lat, lng, heading, hasGps, photoUrl, photoName, marker }
-  conns: [],  // { id, from, to, poly, xMark }
-  selId: null, connFrom: null, startId: null, nxt: 1,
+  nodes: [],
+  conns: [],
+  selId: null,
+  connFrom: null,
+  startId: null,
+  nxt: 1,
+  compareTargetByNode: {},
 };
-const uid  = () => `n${S.nxt++}`;
-const cuid = () => `c${S.nxt++}`;
-const gn   = id => S.nodes.find(n => n.id === id);
-const gcbs = (a,b) => S.conns.filter(c=>(c.from===a&&c.to===b)||(c.from===b&&c.to===a));
 
-// ── MAP ──
-const map = L.map('map', { zoomControl: true }).setView([35.681, 139.767], 15);
+let saveDirHandle = null;
+const uid = () => `n${S.nxt++}`;
+const cuid = () => `c${S.nxt++}`;
+const gn = id => S.nodes.find(n => n.id === id);
+const gcbs = (a, b) => S.conns.filter(c => (c.from === a && c.to === b) || (c.from === b && c.to === a));
+
+const map = L.map('map', { zoomControl: true }).setView([35.6586, 139.7454], 15);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
   maxZoom: 19,
 }).addTo(map);
-S.map = map;
+
+const niN = document.getElementById('ni-n');
+const niP = document.getElementById('ni-p');
+const niH = document.getElementById('ni-h');
+const niS = document.getElementById('ni-s');
+const phB = document.getElementById('ph-b');
+const phN = document.getElementById('ph-n');
+const clL = document.getElementById('cl-l');
+const gpsBadge = document.getElementById('gps-b');
+const headingMeta = document.getElementById('heading-meta');
+const panoWrap = document.getElementById('pano-wrap');
+const panoHelp = document.getElementById('pano-help');
+const saveHint = document.getElementById('savehint');
+const cmpTarget = document.getElementById('cmp-target');
+const cmpWrap = document.getElementById('cmp-wrap');
+const cmpHelp = document.getElementById('cmp-help');
+const cmpOverlayLayer = document.getElementById('cmp-overlay-layer');
+const cmpOpacity = document.getElementById('cmp-opacity');
+const walkList = document.getElementById('walk-list');
+const walkHelp = document.getElementById('walk-help');
+
+let panoViewer = null;
+let panoNodeId = null;
+let cmpBaseViewer = null;
+let cmpOverlayViewer = null;
+let cmpBaseNodeId = null;
+let cmpOverlayNodeId = null;
+let cmpSyncing = false;
+let cmpDelta = 0;
+let cmpSwap = false;
+const walkHistory = [];
+
+initSaveDir();
 
 map.on('click', e => {
   if (S.mode === 'a') addEmptyNode(e.latlng.lat, e.latlng.lng);
@@ -176,272 +260,891 @@ map.on('click', e => {
   else if (S.mode === 'c') { S.connFrom = null; refreshAllMarkers(); }
 });
 
-// ── MODE ──
-document.querySelectorAll('.mode-btn').forEach(b => b.onclick = () => {
-  S.mode = b.dataset.m; S.connFrom = null;
-  document.querySelectorAll('.mode-btn').forEach(x => x.classList.toggle('on', x.dataset.m === S.mode));
-  refreshAllMarkers();
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.onclick = () => {
+    S.mode = btn.dataset.m;
+    S.connFrom = null;
+    document.querySelectorAll('.mode-btn').forEach(x => x.classList.toggle('on', x.dataset.m === S.mode));
+    refreshAllMarkers();
+  };
 });
 
-// ── DROP ──
 const mw = document.getElementById('mw');
 const doEl = document.getElementById('do');
 mw.addEventListener('dragenter', e => { e.preventDefault(); doEl.classList.add('show'); });
-mw.addEventListener('dragover',  e => { e.preventDefault(); });
+mw.addEventListener('dragover', e => { e.preventDefault(); });
 mw.addEventListener('dragleave', e => { if (!mw.contains(e.relatedTarget)) doEl.classList.remove('show'); });
 mw.addEventListener('drop', async e => {
-  e.preventDefault(); doEl.classList.remove('show');
+  e.preventDefault();
+  doEl.classList.remove('show');
   const files = [...e.dataTransfer.files].filter(f => f.type.startsWith('image/'));
   if (!files.length) return;
-  // Convert the drop position to map coordinates
-  const r = document.getElementById('map').getBoundingClientRect();
-  const fallback = map.containerPointToLatLng(L.point(e.clientX - r.left, e.clientY - r.top));
+  const rect = document.getElementById('map').getBoundingClientRect();
+  const fallback = map.containerPointToLatLng(L.point(e.clientX - rect.left, e.clientY - rect.top));
   for (const file of files) await addPhotoNode(file, fallback);
   if (S.nodes.length >= 2) fitAll();
 });
 
-// ── ADD NODE FROM PHOTO ──
-async function addPhotoNode(file, fallback) {
-  let lat = null, lng = null, heading = null, hasGps = false;
+niN.addEventListener('input', () => {
+  const n = gn(S.selId);
+  if (!n) return;
+  n.name = niN.value;
+  refreshMarker(n);
+  renderConnList();
+  refreshCompareUi(n);
+});
+
+niP.addEventListener('change', async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const n = gn(S.selId);
+  if (!n) return;
+  const meta = await readPhotoMeta(file);
+  n.photoName = file.name;
+  n.photoUrl = URL.createObjectURL(file);
+  if (meta.hasGps) {
+    n.lat = meta.lat;
+    n.lng = meta.lng;
+    n.hasGps = true;
+    n.marker?.setLatLng([n.lat, n.lng]);
+    refreshConnLines();
+  }
+  n.heading = meta.heading;
+  n.origHeading = meta.heading;
+  n.viewYaw = meta.heading != null ? degToRad(meta.heading) : 0;
+  n.origViewYaw = n.viewYaw;
+  n.headingSource = meta.heading != null ? 'exif' : 'manual';
+  updateSb();
+  refreshMarker(n);
+  e.target.value = '';
+});
+
+niH.addEventListener('input', () => {
+  const n = gn(S.selId);
+  if (!n) return;
+  n.heading = parseHeadingInput(niH.value);
+  n.headingSource = 'manual';
+  if (n.viewYaw == null) n.viewYaw = getNodeEditorYaw(n);
+  refreshHeadingUi(n);
+  refreshCompareUi(n);
+});
+
+niS.addEventListener('change', () => {
+  S.startId = niS.checked ? S.selId : null;
+  refreshAllMarkers();
+});
+
+document.getElementById('bh-set').onclick = () => {
+  const n = gn(S.selId);
+  if (!n || !panoViewer) return;
+  const pos = lockViewerPitch(panoViewer);
+  n.heading = normalizeHeading(-radToDeg(pos.yaw));
+  n.viewYaw = pos.yaw;
+  n.headingSource = 'manual';
+  refreshHeadingUi(n);
+  refreshCompareUi(n);
+  toast(`${n.name}: heading set to ${n.heading.toFixed(1)}°`);
+};
+
+document.getElementById('bh-reset').onclick = () => {
+  const n = gn(S.selId);
+  if (!n) return;
+  n.heading = n.origHeading;
+  n.viewYaw = n.origViewYaw ?? (n.origHeading != null ? degToRad(n.origHeading) : 0);
+  n.headingSource = n.origHeading != null ? 'exif' : 'manual';
+  refreshHeadingUi(n);
+  refreshCompareUi(n);
+};
+
+document.getElementById('bn-d').onclick = () => {
+  const n = gn(S.selId);
+  if (!n) return;
+  if (n.marker) map.removeLayer(n.marker);
+  S.conns.filter(c => c.from === n.id || c.to === n.id).forEach(c => {
+    if (c.poly) map.removeLayer(c.poly);
+    if (c.xMark) map.removeLayer(c.xMark);
+  });
+  S.conns = S.conns.filter(c => c.from !== n.id && c.to !== n.id);
+  if (S.startId === n.id) S.startId = S.nodes.find(x => x.id !== n.id)?.id ?? null;
+  delete S.compareTargetByNode[n.id];
+  S.nodes = S.nodes.filter(x => x.id !== n.id);
+  S.selId = null;
+  panoNodeId = null;
+  cmpBaseNodeId = null;
+  cmpOverlayNodeId = null;
+  updateSb();
+  refreshAllMarkers();
+  updateStats();
+};
+
+cmpTarget.onchange = () => {
+  const n = gn(S.selId);
+  if (!n) return;
+  S.compareTargetByNode[n.id] = cmpTarget.value || null;
+  refreshCompareUi(n);
+};
+
+document.getElementById('cmp-step').onclick = () => {
+  const target = gn(cmpTarget.value);
+  if (!target) return;
+  jumpToNode(target.id, true);
+};
+
+document.getElementById('cmp-center').onclick = () => {
+  const n = gn(S.selId);
+  const t = gn(cmpTarget.value);
+  if (!n || !t) return;
+  alignCompareByHeading(n, t);
+};
+
+document.getElementById('cmp-swap').onclick = () => {
+  cmpSwap = !cmpSwap;
+  const n = gn(S.selId);
+  if (!n) return;
+  refreshCompareUi(n);
+};
+
+document.getElementById('walk-back').onclick = () => {
+  if (!walkHistory.length) return;
+  const prevId = walkHistory.pop();
+  jumpToNode(prevId, false);
+};
+
+document.getElementById('walk-start').onclick = () => {
+  if (!S.startId) return;
+  walkHistory.length = 0;
+  jumpToNode(S.startId, false);
+};
+
+document.getElementById('best').onclick = () => {
+  const anchor = gn(S.selId) || S.nodes.find(n => n.heading != null);
+  if (!anchor) {
+    alert('Select one anchor node and align north there first.');
+    return;
+  }
+  if (anchor.heading == null) {
+    alert('The selected node has no heading yet. Align north first.');
+    return;
+  }
+  const updated = estimateHeadingsFromAnchor(anchor.id);
+  updateSb();
+  refreshAllMarkers();
+  toast(`${updated} node headings estimated`);
+};
+
+cmpOpacity.addEventListener('input', () => {
+  cmpOverlayLayer.style.opacity = `${Number(cmpOpacity.value) / 100}`;
+});
+cmpOverlayLayer.style.opacity = `${Number(cmpOpacity.value) / 100}`;
+
+document.getElementById('bdir').onclick = async () => {
+  if (!window.showDirectoryPicker) {
+    alert('This browser does not support saving directly to a folder.');
+    return;
+  }
+  try {
+    saveDirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+    await persistDirectoryHandle(saveDirHandle);
+    updateSaveHint();
+    toast(`Save target set to ${saveDirHandle.name}`);
+  } catch (err) {
+    if (err?.name !== 'AbortError') {
+      alert(`Failed to set save target: ${err.message || err}`);
+    }
+  }
+};
+
+document.getElementById('bsave').onclick = async () => {
+  const data = {
+    nodes: S.nodes.map(n => ({
+      id: n.id,
+      name: n.name,
+      lat: n.lat,
+      lng: n.lng,
+      heading: n.heading,
+      origHeading: n.origHeading,
+      viewYaw: n.viewYaw ?? null,
+      origViewYaw: n.origViewYaw ?? null,
+      headingSource: n.headingSource,
+      hasGps: n.hasGps,
+      photoName: n.photoName,
+    })),
+    conns: S.conns.map(c => ({ id: c.id, from: c.from, to: c.to })),
+    startId: S.startId,
+    nxt: S.nxt,
+  };
+  await saveTextFile('tour-project.json', JSON.stringify(data, null, 2));
+};
+
+document.getElementById('bcsv').onclick = async () => {
+  if (!S.nodes.length) {
+    alert('No nodes found.');
+    return;
+  }
+  const missingPhotos = S.nodes.filter(n => !n.photoName);
+  if (missingPhotos.length) {
+    alert(`')}, ')}`);
+    return;
+  }
+  const idToFile = Object.fromEntries(S.nodes.map(n => [n.id, n.photoName]));
+  const rows = S.nodes.map(n => {
+    const connectsTo = S.conns
+      .filter(c => c.from === n.id || c.to === n.id)
+      .map(c => idToFile[c.from === n.id ? c.to : c.from] || '')
+      .filter(Boolean)
+      .join(';');
+    return {
+      filename: n.photoName || '',
+      lat: n.lat ?? '',
+      lng: n.lng ?? '',
+      heading: n.heading == null ? '' : n.heading.toFixed(1),
+      connects_to: connectsTo,
+      memo: '',
+    };
+  });
+  const csv = [
+    ['filename', 'lat', 'lng', 'heading', 'connects_to', 'memo'],
+    ...rows.map(row => [row.filename, row.lat, row.lng, row.heading, row.connects_to, row.memo]),
+  ].map(r => r.map(csvCell).join(',')).join('\n');
+  await saveTextFile('tour.csv', csv);
+};
+
+document.getElementById('bexp').onclick = async () => {
+  if (!S.nodes.length) {
+    alert('No nodes found.');
+    return;
+  }
+  const noPh = S.nodes.filter(n => !n.photoName);
+  if (noPh.length && !confirm(`There are ${noPh.length} nodes without photos. Continue?`)) return;
+
+  const startId = S.startId || S.nodes[0].id;
+  const nodesConf = S.nodes.map(n => {
+    const linked = getLinkedNodes(n.id);
+    const links = linked.map(o => {
+      const yaw = computeYaw(n, o);
+      return { nodeId: o.id, position: { yaw: +yaw.toFixed(3), pitch: -0.15 } };
+    });
+    return {
+      id: n.id,
+      name: n.name,
+      panorama: n.photoName || 'placeholder.jpg',
+      lat: n.lat,
+      lng: n.lng,
+      heading: n.heading,
+      links,
+    };
+  });
+
+  await saveTextFile('tour-viewer.html', genViewer(startId, nodesConf));
+  await saveTextFile('tour-config.json', JSON.stringify({ startNodeId: startId, nodes: nodesConf }, null, 2));
+  setTimeout(() => alert('Exported tour-viewer.html and tour-config.json.'), 200);
+};
+
+function normalizeHeading(v) {
+  if (v == null || Number.isNaN(v)) return null;
+  return ((v % 360) + 360) % 360;
+}
+
+function parseHeadingInput(v) {
+  if (v == null || `${v}`.trim() === '') return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? normalizeHeading(n) : null;
+}
+
+function degToRad(v) { return v * Math.PI / 180; }
+function radToDeg(v) { return v * 180 / Math.PI; }
+function normalizeRad(v) {
+  const twoPi = Math.PI * 2;
+  return ((v + Math.PI) % twoPi + twoPi) % twoPi - Math.PI;
+}
+function getNodeEditorYaw(n) {
+  if (n?.viewYaw != null) return n.viewYaw;
+  if (n?.heading != null) return degToRad(n.heading);
+  return 0;
+}
+
+function bearingDeg(from, to) {
+  const lat1 = from.lat * Math.PI / 180;
+  const lat2 = to.lat * Math.PI / 180;
+  const dLng = (to.lng - from.lng) * Math.PI / 180;
+  const y = Math.sin(dLng) * Math.cos(lat2);
+  const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+  return normalizeHeading(radToDeg(Math.atan2(y, x)));
+}
+
+function meanBearingDeg(values) {
+  if (!values.length) return null;
+  let sx = 0;
+  let sy = 0;
+  values.forEach(v => {
+    const r = degToRad(v);
+    sx += Math.cos(r);
+    sy += Math.sin(r);
+  });
+  if (Math.abs(sx) < 1e-6 && Math.abs(sy) < 1e-6) return null;
+  return normalizeHeading(radToDeg(Math.atan2(sy, sx)));
+}
+
+function chooseCloserHeading(candidate, reference) {
+  if (candidate == null) return reference ?? null;
+  if (reference == null) return candidate;
+  const alt = normalizeHeading(candidate + 180);
+  const d1 = Math.abs(normalizeRad(degToRad(candidate - reference)));
+  const d2 = Math.abs(normalizeRad(degToRad(alt - reference)));
+  return d1 <= d2 ? candidate : alt;
+}
+
+function lockViewerPitch(viewer) {
+  const pos = viewer.getPosition();
+  if (Math.abs(pos.pitch) < 0.0001) return pos;
+  viewer.rotate({ yaw: pos.yaw, pitch: 0 });
+  return { yaw: pos.yaw, pitch: 0 };
+}
+
+function escapeHtml(s) {
+  return `${s ?? ''}`.replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+}
+
+function csvCell(v) {
+  const s = `${v ?? ''}`;
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+async function readPhotoMeta(file) {
+  let lat = null;
+  let lng = null;
+  let heading = null;
+  let hasGps = false;
   try {
     const data = await exifr.parse(file, { gps: true, xmp: true, exif: false, ifd0: false, iptc: false });
     if (data?.latitude && data?.longitude) {
-      lat = data.latitude; lng = data.longitude; hasGps = true;
-      // Camera heading (RICOH THETA / Insta360 / iPhone)
-      heading = data?.PoseHeadingDegrees ?? data?.GPSImgDirection ?? null;
+      lat = data.latitude;
+      lng = data.longitude;
+      hasGps = true;
     }
+    heading = normalizeHeading(data?.PoseHeadingDegrees ?? data?.GPSImgDirection ?? null);
   } catch {}
-
-  if (!hasGps) {
-    lat = fallback.lat; lng = fallback.lng;
-    toast(`⚠️ ${file.name}: no GPS. Drag it to position manually.`);
-  }
-
-  const id = uid();
-  const node = { id, name: file.name.replace(/\.[^.]+$/, ''), lat, lng, heading, hasGps,
-                 photoUrl: URL.createObjectURL(file), photoName: file.name, marker: null };
-  S.nodes.push(node);
-  if (!S.startId) S.startId = id;
-  S.selId = id;
-  createMarker(node);
-  updateSb(); updateStats();
+  return { lat, lng, heading, hasGps };
 }
 
-// ── ADD EMPTY NODE ──
+async function addPhotoNode(file, fallback) {
+  const meta = await readPhotoMeta(file);
+  const node = {
+    id: uid(),
+    name: file.name.replace(/\.[^.]+$/, ''),
+    lat: meta.hasGps ? meta.lat : fallback.lat,
+    lng: meta.hasGps ? meta.lng : fallback.lng,
+    heading: meta.heading,
+    origHeading: meta.heading,
+    viewYaw: meta.heading != null ? degToRad(meta.heading) : 0,
+    origViewYaw: meta.heading != null ? degToRad(meta.heading) : 0,
+    headingSource: meta.heading != null ? 'exif' : 'manual',
+    hasGps: meta.hasGps,
+    photoUrl: URL.createObjectURL(file),
+    photoName: file.name,
+    marker: null,
+  };
+  if (!meta.hasGps) toast(`${file.name}: no GPS found, placed at the drop point`);
+  S.nodes.push(node);
+  if (!S.startId) S.startId = node.id;
+  S.selId = node.id;
+  createMarker(node);
+  updateSb();
+  updateStats();
+}
+
 function addEmptyNode(lat, lng) {
-  const id = uid();
-  const node = { id, name: `Point ${S.nodes.length + 1}`, lat, lng, heading: null, hasGps: false,
-                 photoUrl: null, photoName: null, marker: null };
+  const node = {
+    id: uid(),
+    name: `Point ${S.nodes.length + 1}`,
+    lat,
+    lng,
+    heading: null,
+    origHeading: null,
+    viewYaw: 0,
+    origViewYaw: 0,
+    headingSource: 'manual',
+    hasGps: false,
+    photoUrl: null,
+    photoName: null,
+    marker: null,
+  };
   S.nodes.push(node);
-  if (!S.startId) S.startId = id;
-  S.selId = id;
+  if (!S.startId) S.startId = node.id;
+  S.selId = node.id;
   createMarker(node);
-  updateSb(); updateStats();
+  updateSb();
+  updateStats();
 }
 
-// ── MARKER ──
 function markerHtml(n) {
   const i = S.nodes.indexOf(n);
-  return `<div class="nd${n.id===S.selId?' sel':''}${n.id===S.startId?' start':''}${n.id===S.connFrom?' csrc':''}${n.photoUrl?' hp':''}">
-    ${i+1}<div class="nl">${n.name}${n.id===S.startId?' ⭐':''}</div>
-  </div>`;
+  return `<div class="nd${n.id === S.selId ? ' sel' : ''}${n.id === S.startId ? ' start' : ''}${n.id === S.connFrom ? ' csrc' : ''}${n.photoUrl ? ' hp' : ''}">${i + 1}<div class="nl">${escapeHtml(n.name)}${n.id === S.startId ? ' start' : ''}</div></div>`;
 }
+
 function createMarker(n) {
   const mk = L.marker([n.lat, n.lng], {
     icon: L.divIcon({ html: markerHtml(n), className: '', iconAnchor: [17, 17] }),
     draggable: true,
   }).addTo(map);
-  mk.on('click', e => { L.DomEvent.stopPropagation(e); handleNodeClick(n.id); });
+  mk.on('click', e => {
+    L.DomEvent.stopPropagation(e);
+    handleNodeClick(n.id);
+  });
   mk.on('dragend', () => {
-    const p = mk.getLatLng(); n.lat = p.lat; n.lng = p.lng;
+    const p = mk.getLatLng();
+    n.lat = p.lat;
+    n.lng = p.lng;
     refreshConnLines();
+    refreshCompareUi(gn(S.selId));
   });
   n.marker = mk;
 }
+
 function refreshMarker(n) {
   n.marker?.setIcon(L.divIcon({ html: markerHtml(n), className: '', iconAnchor: [17, 17] }));
 }
-function refreshAllMarkers() { S.nodes.forEach(refreshMarker); }
 
-// ── NODE CLICK ──
+function refreshAllMarkers() {
+  S.nodes.forEach(refreshMarker);
+}
+
 function handleNodeClick(id) {
   if (S.mode === 's') {
-    S.selId = id; refreshAllMarkers(); updateSb();
-  } else if (S.mode === 'c') {
+    jumpToNode(id, false);
+    return;
+  }
+  if (S.mode === 'c') {
     if (!S.connFrom) {
-      S.connFrom = id; refreshAllMarkers();
-    } else if (S.connFrom !== id && gcbs(S.connFrom, id).length === 0) {
+      S.connFrom = id;
+      refreshAllMarkers();
+      return;
+    }
+    if (S.connFrom !== id && gcbs(S.connFrom, id).length === 0) {
       S.conns.push({ id: cuid(), from: S.connFrom, to: id, poly: null, xMark: null });
       S.connFrom = null;
-      refreshAllMarkers(); drawLastConn(); updateStats();
-    } else {
-      S.connFrom = null; refreshAllMarkers();
+      refreshAllMarkers();
+      drawLastConn();
+      updateStats();
+      updateSb();
+      return;
     }
+    S.connFrom = null;
+    refreshAllMarkers();
   }
 }
 
-// ── CONNECTION LINES ──
-function drawLastConn() { drawConn(S.conns[S.conns.length - 1]); }
+function jumpToNode(id, recordHistory = true) {
+  if (recordHistory && S.selId && S.selId !== id) walkHistory.push(S.selId);
+  S.selId = id;
+  refreshAllMarkers();
+  updateSb();
+  const node = gn(id);
+  if (node?.marker) {
+    map.panTo(node.marker.getLatLng(), { animate: true });
+  }
+}
+
+function drawLastConn() {
+  drawConn(S.conns[S.conns.length - 1]);
+}
+
 function drawConn(c) {
-  const a = gn(c.from), b = gn(c.to); if (!a || !b) return;
-  c.poly = L.polyline([[a.lat, a.lng], [b.lat, b.lng]], { color: '#22c55e', weight: 3, opacity: .85 }).addTo(map);
+  const a = gn(c.from);
+  const b = gn(c.to);
+  if (!a || !b) return;
+  c.poly = L.polyline([[a.lat, a.lng], [b.lat, b.lng]], { color: '#22c55e', weight: 3, opacity: 0.85 }).addTo(map);
   const mid = [(a.lat + b.lat) / 2, (a.lng + b.lng) / 2];
   c.xMark = L.marker(mid, {
     icon: L.divIcon({ html: '<div class="conn-x">×</div>', className: '', iconAnchor: [9, 9] }),
     zIndexOffset: 200,
   }).addTo(map);
-  c.xMark.on('click', e => { L.DomEvent.stopPropagation(e); deleteConn(c.id); });
+  c.xMark.on('click', e => {
+    L.DomEvent.stopPropagation(e);
+    deleteConn(c.id);
+  });
 }
+
 function deleteConn(id) {
-  const c = S.conns.find(x => x.id === id); if (!c) return;
-  if (c.poly)  map.removeLayer(c.poly);
+  const c = S.conns.find(x => x.id === id);
+  if (!c) return;
+  if (c.poly) map.removeLayer(c.poly);
   if (c.xMark) map.removeLayer(c.xMark);
   S.conns = S.conns.filter(x => x.id !== id);
-  updateStats(); renderConnList();
+  updateStats();
+  updateSb();
 }
+
 function refreshConnLines() {
   S.conns.forEach(c => {
-    if (c.poly)  map.removeLayer(c.poly);
+    if (c.poly) map.removeLayer(c.poly);
     if (c.xMark) map.removeLayer(c.xMark);
     drawConn(c);
   });
 }
 
-// ── SIDEBAR ──
-const niN = document.getElementById('ni-n');
-const niP = document.getElementById('ni-p');
-const niS = document.getElementById('ni-s');
-const phB = document.getElementById('ph-b');
-const phN = document.getElementById('ph-n');
-const clL = document.getElementById('cl-l');
-const gpsBadge = document.getElementById('gps-b');
+function getLinkedNodes(id) {
+  return S.conns
+    .filter(c => c.from === id || c.to === id)
+    .map(c => gn(c.from === id ? c.to : c.from))
+    .filter(Boolean);
+}
 
-niN.addEventListener('input', () => {
-  const n = gn(S.selId); if (!n) return;
-  n.name = niN.value; refreshMarker(n); renderConnList();
-});
-niP.addEventListener('change', async e => {
-  const f = e.target.files[0]; if (!f) return;
-  const n = gn(S.selId); if (!n) return;
-  n.photoName = f.name; n.photoUrl = URL.createObjectURL(f);
-  try {
-    const data = await exifr.parse(f, { gps: true, xmp: true, exif: false, ifd0: false });
-    if (data?.latitude && data?.longitude) {
-      n.lat = data.latitude; n.lng = data.longitude; n.hasGps = true;
-      n.heading = data?.PoseHeadingDegrees ?? data?.GPSImgDirection ?? null;
-      n.marker?.setLatLng([n.lat, n.lng]);
-      refreshConnLines();
+function estimateHeadingForNode(node, parentId = null) {
+  const linked = getLinkedNodes(node.id);
+  if (!linked.length) return node.heading;
+  if (linked.length === 1) return bearingDeg(node, linked[0]);
+
+  if (parentId) {
+    const forward = linked.filter(o => o.id !== parentId);
+    if (forward.length === 1) return bearingDeg(node, forward[0]);
+    const meanForward = meanBearingDeg(forward.map(o => bearingDeg(node, o)));
+    return chooseCloserHeading(meanForward, node.heading);
+  }
+
+  if (linked.length === 2) {
+    const tangent = bearingDeg(linked[0], linked[1]);
+    return chooseCloserHeading(tangent, node.heading);
+  }
+
+  return chooseCloserHeading(meanBearingDeg(linked.map(o => bearingDeg(node, o))), node.heading);
+}
+
+function estimateHeadingsFromAnchor(anchorId) {
+  const anchor = gn(anchorId);
+  if (!anchor) return 0;
+  const queue = [{ id: anchorId, parentId: null }];
+  const visited = new Set([anchorId]);
+  let updated = 0;
+
+  while (queue.length) {
+    const { id, parentId } = queue.shift();
+    const node = gn(id);
+    if (!node) continue;
+
+    if (id !== anchorId) {
+      const estimated = estimateHeadingForNode(node, parentId);
+      if (estimated != null) {
+        node.heading = normalizeHeading(estimated);
+        node.headingSource = 'auto';
+        updated += 1;
+      }
     }
-  } catch {}
-  updateSb(); refreshMarker(n); e.target.value = '';
-});
-niS.addEventListener('change', () => {
-  S.startId = niS.checked ? S.selId : null; refreshAllMarkers();
-});
-document.getElementById('bn-d').onclick = () => {
-  const n = gn(S.selId); if (!n) return;
-  if (n.marker) map.removeLayer(n.marker);
-  S.conns.filter(c => c.from === S.selId || c.to === S.selId).forEach(c => {
-    if (c.poly)  map.removeLayer(c.poly);
-    if (c.xMark) map.removeLayer(c.xMark);
-  });
-  S.conns = S.conns.filter(c => c.from !== S.selId && c.to !== S.selId);
-  if (S.startId === S.selId) S.startId = S.nodes.find(x => x.id !== S.selId)?.id ?? null;
-  S.nodes = S.nodes.filter(x => x.id !== S.selId);
-  S.selId = null; updateSb(); refreshAllMarkers(); updateStats();
-};
+
+    getLinkedNodes(id).forEach(next => {
+      if (visited.has(next.id)) return;
+      visited.add(next.id);
+      queue.push({ id: next.id, parentId: id });
+    });
+  }
+
+  return updated;
+}
 
 function updateSb() {
   const n = gn(S.selId);
   document.getElementById('no-sel').style.display = n ? 'none' : '';
-  document.getElementById('n-pr').style.display   = n ? '' : 'none';
+  document.getElementById('n-pr').style.display = n ? '' : 'none';
   if (!n) return;
   niN.value = n.name;
   niS.checked = S.startId === n.id;
-  gpsBadge.innerHTML = n.hasGps ? '<span class="gok">📍GPS✓</span>' : '<span class="gno">⚠️no GPS</span>';
-  phB.innerHTML = n.photoUrl ? `<img src="${n.photoUrl}">` : '<span>No photo</span>';
+  gpsBadge.innerHTML = n.hasGps ? '<span class="gok">GPS</span>' : '<span class="gno">No GPS</span>';
+  phB.innerHTML = n.photoUrl ? `<img src="${n.photoUrl}" alt="">` : '<span>No photo</span>';
   phN.textContent = n.photoName ?? '';
+  refreshHeadingUi(n);
+  ensurePanoViewer(n);
+  renderWalkList(n);
   renderConnList();
+  refreshCompareUi(n);
 }
+
+function refreshHeadingUi(n) {
+  niH.value = n.heading == null ? '' : n.heading.toFixed(1);
+  if (n.heading == null) {
+    headingMeta.textContent = 'Heading not set';
+  } else {
+    headingMeta.textContent = `heading ${n.heading.toFixed(1)}° (${n.headingSource === 'exif' ? 'EXIF' : 'manual'})`;
+  }
+}
+
+async function ensurePanoViewer(n) {
+  if (!n?.photoUrl) {
+    panoWrap.style.display = 'none';
+    panoHelp.textContent = 'Choose a photo to check north alignment here.';
+    return;
+  }
+  panoWrap.style.display = '';
+  if (!panoViewer) {
+    panoViewer = new Viewer({
+      container: document.getElementById('pano-view'),
+      panorama: n.photoUrl,
+      navbar: ['zoom', 'move'],
+      defaultYaw: getNodeEditorYaw(n),
+      defaultPitch: 0,
+      minPitch: 0,
+      maxPitch: 0,
+      touchmoveTwoFingers: true,
+    });
+    panoViewer.addEventListener('position-updated', () => {
+      if (S.selId !== panoNodeId) return;
+      const pos = lockViewerPitch(panoViewer);
+      const yaw = normalizeHeading(radToDeg(pos.yaw));
+      panoHelp.textContent = `View yaw ${yaw.toFixed(1)}°. Rotate horizontally only and face north.`;
+    });
+  }
+  if (panoNodeId !== n.id) {
+    panoNodeId = n.id;
+    await panoViewer.setPanorama(n.photoUrl, {
+      transition: false,
+      position: { yaw: getNodeEditorYaw(n), pitch: 0 },
+    });
+  } else {
+    panoViewer.rotate({ yaw: getNodeEditorYaw(n), pitch: 0 });
+  }
+}
+
 function renderConnList() {
-  if (!S.selId) return;
-  const linked = S.conns.filter(c => c.from === S.selId || c.to === S.selId);
+  const n = gn(S.selId);
+  if (!n) return;
+  const linked = getLinkedNodes(n.id);
   clL.innerHTML = '';
-  if (!linked.length) { clL.innerHTML = '<span style="color:#6b7280">none</span>'; return; }
-  linked.forEach(c => {
-    const oid = c.from === S.selId ? c.to : c.from;
-    const o = gn(oid); if (!o) return;
-    const d = document.createElement('div'); d.className = 'ci';
-    d.innerHTML = `<span>${o.name}</span><span class="cx" data-id="${c.id}">×</span>`;
+  if (!linked.length) {
+    clL.innerHTML = '<span style="color:#6b7280">None</span>';
+    return;
+  }
+  linked.forEach(o => {
+    const c = gcbs(n.id, o.id)[0];
+    const d = document.createElement('div');
+    d.className = 'ci';
+    d.innerHTML = `<span class="cil" data-node="${o.id}">${escapeHtml(o.name)}</span><span class="cx" data-id="${c.id}">×</span>`;
+    d.querySelector('.cil').onclick = () => {
+      S.compareTargetByNode[n.id] = o.id;
+      refreshCompareUi(n);
+    };
     d.querySelector('.cx').onclick = () => deleteConn(c.id);
     clL.appendChild(d);
   });
 }
-function updateStats() {
-  document.getElementById('st').textContent = `Nodes ${S.nodes.length} | Connections ${S.conns.length}`;
+
+function renderWalkList(n) {
+  walkList.innerHTML = '';
+  const linked = getLinkedNodes(n.id).filter(x => x.photoUrl);
+  if (!linked.length) {
+    walkHelp.textContent = 'Select a node with links and you can walk from here inside the editor.';
+    return;
+  }
+  walkHelp.textContent = `Current: ${n.name}. Click a linked node to move there.`;
+  linked.forEach(o => {
+    const btn = document.createElement('button');
+    btn.className = 'walkchip';
+    btn.textContent = o.name;
+    btn.onclick = () => jumpToNode(o.id, true);
+    walkList.appendChild(btn);
+  });
 }
 
-// ── FIT MAP ──
+function refreshCompareUi(n) {
+  if (!n) {
+    cmpWrap.style.display = 'none';
+    cmpTarget.innerHTML = '';
+    return;
+  }
+  const linked = getLinkedNodes(n.id).filter(x => x.photoUrl);
+  cmpTarget.innerHTML = '';
+  if (!linked.length || !n.photoUrl) {
+    cmpWrap.style.display = 'none';
+    cmpHelp.textContent = 'If a linked node has a photo, you can overlay-compare it here.';
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = linked.length ? 'Choose linked node' : 'No comparable linked nodes';
+    cmpTarget.appendChild(opt);
+    return;
+  }
+  let targetId = S.compareTargetByNode[n.id];
+  if (!targetId || !linked.some(x => x.id === targetId)) {
+    targetId = linked[0].id;
+    S.compareTargetByNode[n.id] = targetId;
+  }
+  linked.forEach(o => {
+    const opt = document.createElement('option');
+    opt.value = o.id;
+    opt.textContent = o.name;
+    opt.selected = o.id === targetId;
+    cmpTarget.appendChild(opt);
+  });
+  cmpWrap.style.display = '';
+  cmpHelp.textContent = cmpSwap
+    ? 'Swapped comparison order. Use whichever view makes the overlap easier to read.'
+    : 'Use the translucent overlap and align it by eye.';
+  ensureCompareViewers(n, gn(targetId));
+}
+
+async function ensureCompareViewers(baseNode, targetNode) {
+  if (!baseNode?.photoUrl || !targetNode?.photoUrl) {
+    cmpWrap.style.display = 'none';
+    return;
+  }
+  const mainNode = cmpSwap ? targetNode : baseNode;
+  const overNode = cmpSwap ? baseNode : targetNode;
+  if (!cmpBaseViewer) {
+    cmpBaseViewer = new Viewer({
+      container: document.getElementById('cmp-base'),
+      panorama: mainNode.photoUrl,
+      navbar: ['zoom', 'move'],
+      defaultPitch: 0,
+      touchmoveTwoFingers: true,
+    });
+    cmpBaseViewer.addEventListener('position-updated', () => {
+      if (!cmpOverlayViewer || cmpSyncing) return;
+      const pos = cmpBaseViewer.getPosition();
+      cmpSyncing = true;
+      cmpOverlayViewer.rotate({
+        yaw: normalizeRad(pos.yaw + cmpDelta),
+        pitch: pos.pitch,
+      });
+      cmpSyncing = false;
+    });
+  }
+  if (!cmpOverlayViewer) {
+    cmpOverlayViewer = new Viewer({
+      container: document.getElementById('cmp-overlay'),
+      panorama: overNode.photoUrl,
+      navbar: [],
+      defaultPitch: 0,
+      mousewheel: false,
+      touchmoveTwoFingers: false,
+    });
+  }
+  if (cmpBaseNodeId !== mainNode.id) {
+    cmpBaseNodeId = mainNode.id;
+    await cmpBaseViewer.setPanorama(mainNode.photoUrl, { transition: false, position: { yaw: 0, pitch: 0 } });
+  }
+  if (cmpOverlayNodeId !== overNode.id) {
+    cmpOverlayNodeId = overNode.id;
+    await cmpOverlayViewer.setPanorama(overNode.photoUrl, { transition: false, position: { yaw: 0, pitch: 0 } });
+  }
+  alignCompareByHeading(baseNode, targetNode);
+}
+
+function alignCompareByHeading(baseNode, targetNode) {
+  if (!cmpBaseViewer || !cmpOverlayViewer) return;
+  const baseYaw = baseNode.heading != null ? degToRad(baseNode.heading) : 0;
+  const overlayYaw = targetNode.heading != null ? degToRad(targetNode.heading) : 0;
+  const mainYaw = cmpSwap ? overlayYaw : baseYaw;
+  const overYaw = cmpSwap ? baseYaw : overlayYaw;
+  cmpDelta = normalizeRad(overYaw - mainYaw);
+  cmpSyncing = true;
+  cmpBaseViewer.rotate({ yaw: mainYaw, pitch: 0 });
+  cmpOverlayViewer.rotate({ yaw: overYaw, pitch: 0 });
+  cmpSyncing = false;
+  cmpHelp.textContent = cmpSwap
+    ? 'Comparing with front/back swapped. Align where the overlap looks natural.'
+    : 'Comparing with the same view heading. Align where the overlap looks natural.';
+}
+
+function updateStats() {
+  document.getElementById('st').textContent = `Nodes ${S.nodes.length} | Links ${S.conns.length}`;
+}
+
 function fitAll() {
   const b = L.latLngBounds(S.nodes.map(n => [n.lat, n.lng]));
   map.fitBounds(b, { padding: [60, 60] });
 }
 
-// ── TOAST ──
 function toast(msg) {
-  const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg;
-  document.body.appendChild(t); setTimeout(() => t.remove(), 4000);
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 4000);
 }
 
-// ── SAVE ──
-document.getElementById('bsave').onclick = () => {
-  const data = {
-    nodes: S.nodes.map(n => ({ id: n.id, name: n.name, lat: n.lat, lng: n.lng, heading: n.heading, photoName: n.photoName })),
-    conns: S.conns.map(c => ({ id: c.id, from: c.from, to: c.to })),
-    startId: S.startId, nxt: S.nxt,
-  };
-  dl(JSON.stringify(data, null, 2), 'tour-project.json');
-};
+async function initSaveDir() {
+  saveDirHandle = await loadSavedDirectoryHandle();
+  updateSaveHint();
+}
 
-// ── EXPORT ──
-document.getElementById('bexp').onclick = () => {
-  if (!S.nodes.length) { alert('No nodes yet'); return; }
-  const noPh = S.nodes.filter(n => !n.photoName);
-  if (noPh.length && !confirm(`${noPh.length} node(s) have no photo. Continue?`)) return;
+function updateSaveHint() {
+  saveHint.textContent = `Save target: ${saveDirHandle?.name || 'Downloads'}`;
+}
 
-  const startId = S.startId || S.nodes[0].id;
+async function saveTextFile(name, content) {
+  if (saveDirHandle) {
+    try {
+      const perm = await ensureDirectoryPermission(saveDirHandle);
+      if (perm === 'granted') {
+        const fileHandle = await saveDirHandle.getFileHandle(name, { create: true });
+        const writable = await fileHandle.createWritable();
+        await writable.write(content);
+        await writable.close();
+        toast(`${name} saved to ${saveDirHandle.name}`);
+        return true;
+      }
+    } catch (err) {
+      console.warn('direct save failed, fallback to download', err);
+      toast(`${name}: folder save failed, downloading instead`);
+    }
+  }
+  dl(content, name);
+  return false;
+}
 
-  // Build node config (compute yaw from GPS heading)
-  const nodesConf = S.nodes.map(n => {
-    const linked = S.conns.filter(c => c.from === n.id || c.to === n.id);
-    const links = linked.map(c => {
-      const oid = c.from === n.id ? c.to : c.from;
-      const yaw = computeYaw(n, gn(oid));
-      return { nodeId: oid, position: { yaw: +yaw.toFixed(3), pitch: -0.15 } };
-    });
-    return { id: n.id, name: n.name, panorama: n.photoName || 'placeholder.jpg', links };
+async function ensureDirectoryPermission(handle) {
+  const opts = { mode: 'readwrite' };
+  if ((await handle.queryPermission(opts)) === 'granted') return 'granted';
+  return handle.requestPermission(opts);
+}
+
+function openSaveDb() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('vr-tour-editor', 1);
+    req.onupgradeneeded = () => req.result.createObjectStore('kv');
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
   });
+}
 
-  dl(genViewer(startId, nodesConf), 'tour-viewer.html');
-  dl(JSON.stringify({ startNodeId: startId, nodes: nodesConf }, null, 2), 'tour-config.json');
+async function persistDirectoryHandle(handle) {
+  try {
+    const db = await openSaveDb();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction('kv', 'readwrite');
+      tx.objectStore('kv').put(handle, 'saveDirHandle');
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+    db.close();
+  } catch (err) {
+    console.warn('persistDirectoryHandle failed', err);
+  }
+}
 
-  setTimeout(() => alert(
-    '✅ Downloaded 2 files\n\n'
-    + '📁 Put the 360 photos (.jpg) in the same folder\n\n'
-    + '🌐 Local preview:\n  python -m http.server 8080\n  → http://localhost:8080/tour-viewer.html\n\n'
-    + '☁️ Publish by uploading the whole folder to any static host (e.g. Cloudflare Pages)'
-  ), 400);
-};
+async function loadSavedDirectoryHandle() {
+  try {
+    const db = await openSaveDb();
+    const handle = await new Promise((resolve, reject) => {
+      const tx = db.transaction('kv', 'readonly');
+      const req = tx.objectStore('kv').get('saveDirHandle');
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => reject(req.error);
+    });
+    db.close();
+    return handle;
+  } catch (err) {
+    console.warn('loadSavedDirectoryHandle failed', err);
+    return null;
+  }
+}
 
-// Geographic bearing -> PSV yaw (corrected to relative angle when camera heading is known)
 function computeYaw(from, to) {
-  const φ1 = from.lat * Math.PI / 180, φ2 = to.lat * Math.PI / 180;
-  const Δλ = (to.lng - from.lng) * Math.PI / 180;
-  const y = Math.sin(Δλ) * Math.cos(φ2);
-  const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
-  const bearing = Math.atan2(y, x); // 0=north, clockwise (radians)
-  const camHeading = from.heading != null ? from.heading * Math.PI / 180 : 0;
-  return bearing - camHeading;
+  const lat1 = from.lat * Math.PI / 180;
+  const lat2 = to.lat * Math.PI / 180;
+  const dLng = (to.lng - from.lng) * Math.PI / 180;
+  const y = Math.sin(dLng) * Math.cos(lat2);
+  const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+  const bearing = Math.atan2(y, x);
+  const camHeading = from.heading != null ? degToRad(from.heading) : 0;
+  return normalizeRad(bearing - camHeading);
 }
 
 function genViewer(startId, nodes) {
@@ -451,14 +1154,14 @@ function genViewer(startId, nodes) {
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Virtual Walkthrough</title>
+<title>Tour Viewer</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5.11.5/index.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/virtual-tour-plugin@5.11.5/index.css">
 <style>*{margin:0;padding:0;box-sizing:border-box}html,body{height:100%;background:#000}#viewer{width:100vw;height:100vh}#badge{position:fixed;top:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);color:#fff;padding:5px 16px;border-radius:999px;font-family:system-ui,sans-serif;font-size:13px;backdrop-filter:blur(6px);pointer-events:none}</style>
 </head>
 <body>
 <div id="viewer"></div>
-<div id="badge">${sn.name}</div>
+<div id="badge">${escapeHtml(sn.name)}</div>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js","@photo-sphere-viewer/core":"https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5.11.5/index.module.js","@photo-sphere-viewer/virtual-tour-plugin":"https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/virtual-tour-plugin@5.11.5/index.module.js"}}${closeScript}
 <script type="module">
 import { Viewer } from '@photo-sphere-viewer/core';
@@ -475,7 +1178,8 @@ ${closeScript}
 function dl(content, name) {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([content], { type: 'text/plain' }));
-  a.download = name; a.click();
+  a.download = name;
+  a.click();
 }
 </script>
 </body>
